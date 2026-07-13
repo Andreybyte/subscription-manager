@@ -1,13 +1,16 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from datetime import date
 from src.config.supabase import supabase
+from src.middlewares.auth_middlewares import protect_route
 
-router = APIRouter(tags=["Subscriptions"])
+router = APIRouter(tags=["Subscriptions"],
+                   dependencies=[Depends(protect_route)]
+                   )
 
 class SubscriptionSchema(BaseModel):
     #Modelo de datos
-    id_user: str = Field(..., example="8eea60f9-3e3c-459a-a3b3-ade3d37f2c06")
+    
     category: str = Field(..., example="Streaming")
     name_subscription: str = Field(..., example="Netflix")
     details_subscription: str = Field(..., example="None")
@@ -29,10 +32,11 @@ class SubscriptionUpdateSchema(BaseModel):
         summary="Create new supscription",
         response_description= "The supscription was created succesully."
         )
-def create_subscription(payload: SubscriptionSchema):
+def create_subscription(payload: SubscriptionSchema, user = Depends(protect_route)):
     try:
         #Se convierte el payload en un dicconario limpio
         data_to_insert = payload.model_dump( mode="json")
+        data_to_insert["id_user"] = user.id
         response = supabase.table("subscription").insert(data_to_insert).execute()
 
         return {
@@ -49,7 +53,7 @@ def create_subscription(payload: SubscriptionSchema):
     summary="Update Subscription",
     response_description= "The subscription was updated."
 )
-def updateSubscription(id_subscription: str, payload: SubscriptionUpdateSchema):
+def updateSubscription(id_subscription: str, payload: SubscriptionUpdateSchema, user = Depends(protect_route)):
     try:
         
         data_to_update = payload.model_dump(exclude_unset=True, mode="json")
@@ -57,7 +61,12 @@ def updateSubscription(id_subscription: str, payload: SubscriptionUpdateSchema):
         if not data_to_update:
             raise HTTPException(status_code=400, detail="No fields provide to update")
         
-        response = supabase.table("subscription").update(data_to_update).eq("id_subscription", id_subscription).execute()
+        response = supabase \
+            .table("subscription") \
+            .update(data_to_update)\
+            .eq("id_subscription", id_subscription) \
+            .eq("id_user", user.id) \
+            .execute()
 
         return {
             "message" : "Subscription updated successfully",
