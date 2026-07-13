@@ -66,3 +66,58 @@ def updateSubscription(id_subscription: str, payload: SubscriptionUpdateSchema):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Server error")
+
+@router.get(
+    "/getSubscription",
+    summary="Get any subscription",
+    response_description= "Subscription data"
+)
+def getSubscription(id_user: str):
+    try:
+        response = supabase.table("subscription").select("*").eq("id_user", id_user).execute()
+        if not response.data:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Subscription of user id '{id_user} not found."
+            )
+
+        return {
+            "message" : "Subscription data",
+            "data": response.data
+        }
+    
+    except HTTPException as http_error:
+        raise http_error 
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Server error")
+    
+@router.delete(
+    "/deleteSubscription",
+    summary="Delete any subscription",
+    response_description="Subscription deleted successfully."
+)
+def deleteSubscription(id_subscription: str):
+    try:
+        response = supabase.table("subscription").delete().eq("id_subscription", id_subscription).execute()
+
+
+    
+    except HTTPException as http_error:
+        print(http_error)
+    
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Server Error")
+    
+    if not response or not response.data:
+        raise HTTPException(
+            status_code=404,
+            detail="No subscription found with the provide id."
+        )
+        
+    return {
+        "message": "Subscription deleted succesfully.",
+        "delete_data" : response.data[0]
+    }
