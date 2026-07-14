@@ -4,9 +4,10 @@ from datetime import date
 from src.config.supabase import supabase
 from src.middlewares.auth_middlewares import protect_route
 
-router = APIRouter(tags=["Subscriptions"],
-                   dependencies=[Depends(protect_route)]
-                   )
+router = APIRouter(
+    tags=["Subscriptions"],
+   dependencies=[Depends(protect_route)]
+)
 
 class SubscriptionSchema(BaseModel):
     #Modelo de datos
@@ -37,7 +38,11 @@ def create_subscription(payload: SubscriptionSchema, user = Depends(protect_rout
         #Se convierte el payload en un dicconario limpio
         data_to_insert = payload.model_dump( mode="json")
         data_to_insert["id_user"] = user.id
-        response = supabase.table("subscription").insert(data_to_insert).execute()
+        response = supabase\
+            .table("subscription")\
+            .table("payment_history")\
+            .insert(data_to_insert)\
+            .execute()
 
         return {
             "message" : "Subscription added successfully.",

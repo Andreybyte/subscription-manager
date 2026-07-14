@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from src.routers.subscription import router as subscriptions_router
+from src.routers.payment_history import router as payment_history_router
 
 #Se crea la instancia de la API
 app = FastAPI(
@@ -19,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(subscriptions_router)
+app.include_router(payment_history_router)
 #Ruta de prueba
 @app.get("/")
 def read_root():
